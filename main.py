@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import scrolledtext, messagebox
 import google.generativeai as genai
+import requests
 
 # Configure the generative AI API key and model
 genai.configure(api_key='AIzaSyDJC5lt2EQ1rI07apWkMXu1sqXo0Y_Ij8s')
@@ -28,6 +29,15 @@ model = genai.GenerativeModel(
 chat_session = model.start_chat(history=[])
 
 
+# Function to check internet connectivity
+def check_internet_connection():
+    try:
+        requests.get('http://www.google.com', timeout=3)
+        return True
+    except requests.ConnectionError:
+        return False
+
+
 # Function to handle sending a message to the model
 def send_message():
     user_input = user_entry.get()
@@ -40,11 +50,18 @@ def send_message():
         messagebox.showinfo("Input Error", "Please ask a question related to typhoid.")
         return
 
-    # Insert user input into the dictionary
-    request = {user_input}
+    # Check internet connection
+    if not check_internet_connection():
+        response_text = "Connect to an internet error."
+    else:
+        # Insert user input into the dictionary
+        request = {user_input}
 
-    response = chat_session.send_message(request)
-    response_text = response.text
+        try:
+            response = chat_session.send_message(request)
+            response_text = response.text.replace("*", "")  # Remove asterisks from the response
+        except Exception as e:
+            response_text = "Network error: Unable to get a response."
 
     chat_history.config(state=tk.NORMAL)
     chat_history.insert(tk.END, "You: " + user_input + "\n")
